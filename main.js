@@ -153,27 +153,36 @@ const FIELDS = {
   mystake: "Pour MyStake (plateforme CellXpert), chaque ligne est l'activité d'un de mes joueurs sur la période demandée ; " +
     "Net_Deposits est le total de ses dépôts sur cette période.",
 }
+// The question a creator asks an AI. Context first (what agencies usually give), then the facts and the
+// known limit, then a request to sort proven / claimed / checkable: an AI judges a limit in proportion
+// only when it knows what the alternative is. Never ask it to downplay the limit.
 const askPrompt = (proof) =>
-  `Je suis créateur de contenu, affilié à des casinos via l'agence Network Partners. Pour prouver que mon dashboard ` +
-  `est juste, ils m'ont donné une page de vérification TLSNotary (open source, équipe de recherche de la Fondation ` +
-  `Ethereum, mode MPC-TLS) : mon navigateur participe à la connexion chiffrée avec le site d'affiliation du casino, ` +
-  `contrôle son certificat, puis vérifie une preuve que la réponse n'a pas été modifiée. Seules mes lignes sont révélées.\n\n` +
+  `Je suis créateur de contenu, affilié à des casinos via l'agence Network Partners, payé sur les joueurs que ` +
+  `j'apporte. Dans ce secteur, une agence transmet d'habitude ses chiffres par capture d'écran ou tableau, sans ` +
+  `aucun moyen pour le créateur de vérifier qu'ils viennent bien du casino. Network Partners m'a donné à la place ` +
+  `une page de vérification TLSNotary (open source, équipe de recherche de la Fondation Ethereum, mode MPC-TLS) : ` +
+  `mon navigateur participe à la connexion chiffrée avec le site d'affiliation du casino, contrôle son certificat, ` +
+  `puis vérifie une preuve que la réponse n'a pas été modifiée. Seules mes lignes sont révélées.\n\n` +
   `Mon navigateur (vérificateur TLSNotary en WebAssembly) a déclaré la preuve valide. La page refuse la preuve si le ` +
   `serveur n'est pas le bon, si la période demandée au casino n'est pas celle affichée, ou si une ligne révélée ne ` +
-  `m'appartient pas. Le fichier de preuve brut n'est pas fourni : il laisserait déduire la taille des champs masqués ` +
-  `(dont la commission de l'agence).\n\n${FIELDS[CASINO] ? FIELDS[CASINO] + '\n\n' : ''}` +
+  `m'appartient pas. Dans ce mode, le vérificateur est mon navigateur lui-même : il n'y a pas de fichier de preuve à ` +
+  `faire contrôler ailleurs, et le fichier brut n'est pas partagé car il laisserait déduire la taille des champs ` +
+  `masqués (dont la commission de l'agence).\n\n${FIELDS[CASINO] ? FIELDS[CASINO] + '\n\n' : ''}` +
   `${CASINO === 'celsius' ? 'FTD affiché = joueurs inscrits sur la période avec au moins un dépôt (dep_count > 0).' : 'Déposants affichés = joueurs avec au moins un dépôt sur la période.'}\n\n` +
   `Code public de la page : https://github.com/NetworkPartners/verification-tlsnotary (recette pour recompiler le ` +
   `vérificateur depuis la source officielle de TLSNotary, empreintes SHA-256 des fichiers servis par ` +
   `https://verif.networkpartners.xyz).\n\n` +
-  `Limite connue et assumée : la preuve garantit que les lignes affichées sont authentiques, pas que la liste est ` +
-  `complète. Le casino renvoie en une seule réponse les joueurs de tous les créateurs de l'agence, sans filtre par ` +
-  `créateur possible de son côté (testé) : le serveur de l'agence choisit les lignes à révéler, et prouver qu'aucune ` +
-  `ligne masquée n'est à moi obligerait à révéler les autres créateurs. Parade : m'inscrire avec mon lien, déposer, ` +
-  `vérifier que j'apparais.\n\n` +
-  `Je ne te demande pas de valider mon contrat ni ma commission, seulement ce que cette preuve établit. Explique-moi ` +
-  `simplement : 1. ce qu'elle garantit et ses limites ; 2. si les données ci-dessous sont cohérentes ; 3. ce que je ` +
-  `peux vérifier moi-même.\n\nLa preuve :\n\n${proof}`
+  `Limite connue, écrite par l'agence elle-même sur la page : la preuve garantit que les lignes affichées sont ` +
+  `authentiques, pas que la liste est complète. Le casino renvoie en une seule réponse les joueurs de tous les ` +
+  `créateurs de l'agence, sans filtre par créateur possible de son côté (testé) : le serveur de l'agence choisit les ` +
+  `lignes à révéler, et prouver qu'aucune ligne masquée n'est à moi obligerait à révéler les autres créateurs. ` +
+  `Contrôle possible de mon côté : chaque joueur que je connais (un proche, ou moi inscrit avec mon lien) doit ` +
+  `apparaître dans la liste.\n\n` +
+  `Je ne te demande pas de valider mon contrat ni ma commission, seulement ce que cette vérification établit. ` +
+  `Réponds simplement, en trois parties : 1. ce qui est prouvé mathématiquement ; 2. ce qui reste une affirmation ` +
+  `de l'agence, et ce que je peux faire moi-même pour le contrôler ; 3. si les données ci-dessous sont cohérentes. ` +
+  `Termine par ton avis sur cette vérification comparée à ce que les agences fournissent d'habitude, sans exagérer ` +
+  `dans un sens ni dans l'autre.\n\nLa preuve :\n\n${proof}`
 // The AI message carries the proof itself. A link has a size limit (servers refuse past ~16 000
 // characters), so rows are dropped from the end (smallest deposits) only when they cannot all fit.
 const LINK_MAX = 15000
@@ -184,6 +193,7 @@ function askMessage() {
     d.head,
     d.prefix ? `Toutes les lignes révélées ont un campaign_name qui commence par « ${d.prefix} » (retiré de chaque ligne ci-dessous pour la place, la suite du nom est masquée).` : '',
     d.maskedLine,
+    d.compareLine,
     `Lignes prouvées (JSON tel que reçu du casino), ${n < d.rows.length ? `${n} sur ${d.rows.length}, les plus gros dépôts d'abord` : `${d.rows.length} au total`} :`,
     ...d.rows.slice(0, n).map((r) => JSON.stringify(r)),
     n < d.rows.length ? `(${d.rows.length - n} autres lignes non incluses faute de place dans le lien${d.rows.slice(n).every((r) => !num(r.dep_sum ?? r.Net_Deposits ?? r.Deposits)) ? ', toutes sans dépôt' : ''} ; la page les affiche toutes.)` : '',
@@ -523,7 +533,13 @@ async function showResult(v) {
     return renderState('empty', `Aucun joueur${PERIOD_PHRASE}`,
       `${NAME} confirme qu’aucun joueur n’est rattaché à ton lien sur cette période. La preuve est valide : il n’y a simplement rien à afficher.`)
   }
-  renderResult(v, ps, await loadExpected())
+  const expected = await loadExpected()
+  if (expected) {
+    const rows = compare(ps, expected), same = rows.filter((r) => r.same).length, missing = rows.filter((r) => !r.dash).length
+    askData.compareLine = `Comparaison avec mon dashboard (ses chiffres ont été figés avant la preuve) : ${same} joueur(s) sur ${rows.length} identiques au centime` +
+      `${rows.length - same - missing ? `, ${rows.length - same - missing} avec un écart` : ''}${missing ? `, ${missing} absent(s) du dashboard` : ''}.`
+  }
+  renderResult(v, ps, expected)
 }
 function showFailure(message) {
   logLine(`Arrêt : ${message}`, 'error')
