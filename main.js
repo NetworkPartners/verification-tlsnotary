@@ -227,6 +227,9 @@ const cx = (...a) => a.filter(Boolean).join(' ')
 const NB = ' '
 const fmtNum = (n, d = 0) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n).replace(/[  ]/g, NB)
 const fmtEur = (n) => eur.format(n).replace(/[  ]/g, NB)
+// Table cells: the € sign lives in the column header, so four amounts fit a phone width.
+const amt = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const fmtAmt = (n) => amt.format(n).replace(/[  ]/g, NB)
 const fmtMB = (b) => `${fmtNum(b / 1048576, 1)}${NB}Mo`
 const fmtBytes = (b) => (b >= 1024 ? `${fmtNum(b / 1024, 1)}${NB}Ko` : `${b}${NB}octets`)
 const fmtClock = (s) => { const t = Math.max(0, Math.floor(s)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }
@@ -452,8 +455,6 @@ function renderBefore() {
     h('div', { class: 'vs-path' }, ProofPath({ status: 'idle' })),
     h('div', { class: 'vs-cta' }, Button({ size: 'lg', iconAfter: 'arrow-right', label: 'Lancer la vérification', onclick: start })),
     h('div', { class: 'vs-trust' },
-      h('span', null, Icon('clock', 15), 'Environ 20 secondes'),
-      h('span', null, Icon('browser', 15), 'Rien à installer'),
       h('a', { href: REPO, target: '_blank', rel: 'noopener noreferrer' }, Icon('code', 15), 'Code public sur GitHub'))))
 }
 
@@ -478,17 +479,26 @@ function ComparisonTable(ps, expected) {
   const synced = expected?._meta?.synced ? new Date(expected._meta.synced) : null
   const ago = synced && !Number.isNaN(synced.getTime()) ? Math.max(0, Date.now() - synced.getTime()) : null
   const agoText = ago == null ? null : ago < 3600e3 ? `il y a ${Math.max(1, Math.round(ago / 60e3))}${NB}min` : `il y a ${Math.round(ago / 3600e3)}${NB}h`
-  const cell = (v, d) => h('td', { class: 'np-compare__num' }, h('span', null, fmtEur(v)),
-    d != null && cents(d) !== cents(v) && h('span', { class: 'np-compare__dash' }, `dashboard${NB}: ${fmtEur(d)}`))
+  // One column for the casino's proven figure, one for the dashboard's, side by side.
+  const pair = (v, d, r) => [
+    h('td', { class: 'np-compare__num' }, v == null ? '' : fmtAmt(v)),
+    h('td', { class: cx('np-compare__num', 'np-compare__dashcol', expected && r.dash && v != null && cents(d) !== cents(v) && 'is-gap') },
+      !expected ? '' : !r.dash ? 'absent' : v == null ? '' : fmtAmt(d))]
   const sorted = [...rows].sort((a, b) => Number(a.same) - Number(b.same) || b.deposits - a.deposits)
   return { gaps, node: h('section', { class: 'np-compare' },
     h('div', { class: 'np-compare__head' }, h('h3', { class: 'np-compare__title' }, `Ton dashboard comparé à ${NAME}`), h('span', { class: 'np-compare__count' }, `${fmtNum(n)} ${n > 1 ? 'joueurs' : 'joueur'}`)),
     h('div', { class: 'np-compare__scroll', tabindex: 0, 'aria-label': `Comparaison joueur par joueur, ${n} lignes` },
       h('table', { class: 'np-compare__table' },
-        h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Joueur'), h('th', { scope: 'col', class: 'np-compare__num' }, 'Déposé'),
-          withNgr && h('th', { scope: 'col', class: 'np-compare__num' }, 'NGR'), h('th', { scope: 'col', class: 'np-compare__st' }, 'Statut'))),
-        h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player', title: r.who, onclick: (e) => e.currentTarget.classList.toggle('is-open') }, h('span', { class: 'np-compare__mark' }, StatusPill(status(r))), h('span', { class: 'np-compare__name' }, r.who)), cell(r.deposits, r.dash?.deposits),
-          withNgr && (r.ngr == null ? h('td', { class: 'np-compare__num' }) : cell(r.ngr, r.dash?.ngr)), h('td', { class: 'np-compare__st' }, StatusPill(status(r)))))))),
+        h('thead', null,
+          h('tr', null, h('th', { scope: 'col', rowspan: 2 }, 'Joueur'),
+            h('th', { scope: 'colgroup', colspan: 2, class: 'np-compare__group' }, `Dépôts${NB}€`),
+            withNgr && h('th', { scope: 'colgroup', colspan: 2, class: 'np-compare__group' }, `NGR${NB}€`)),
+          h('tr', null, ...Array.from({ length: withNgr ? 2 : 1 }, () => [
+            h('th', { scope: 'col', class: 'np-compare__num np-compare__sub' }, NAME),
+            h('th', { scope: 'col', class: 'np-compare__num np-compare__sub' }, h('span', { class: 'vs-long' }, 'Dashboard'), h('span', { class: 'vs-short' }, 'Dash'))]).flat())),
+        h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player', title: r.who, onclick: (e) => e.currentTarget.classList.toggle('is-open') }, h('span', { class: 'np-compare__mark' }, StatusPill(status(r))), h('span', { class: 'np-compare__name' }, r.who)),
+          ...pair(r.deposits, r.dash?.deposits, r),
+          ...(withNgr ? pair(r.ngr, r.dash?.ngr, r) : [])))))),
     gaps > 0 && h('div', { class: 'np-note' }, Icon('info', 18),
       h('div', null, h('b', null, 'D\u2019où peut venir un écart ?'),
         ` Ton dashboard se synchronise avec ${NAME} toutes les 3${NB}h${agoText ? ` (dernière fois ${agoText})` : ''}. ` +
@@ -509,7 +519,7 @@ function renderResult(v, ps, expected) {
   const at = v.when ? v.when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : hhmmss().slice(0, 5)
   const verdict = cmp.gaps
     ? Verdict('gap', `Tes chiffres ${NAME} sont prouvés, ton dashboard diffère sur ${cmp.gaps} joueur${cmp.gaps > 1 ? 's' : ''}`,
-      `Le détail est dans le tableau : chiffre de ${NAME} en premier, celui de ton dashboard en dessous.`)
+      `Le détail est dans le tableau : pour chaque joueur, la colonne ${NAME} et la colonne Dashboard côte à côte.`)
     : Verdict('confirmed', `Tes chiffres ${NAME}${PERIOD_PHRASE} sont confirmés`, `Vérifié par ton navigateur à ${at}`)
   view(h('div', { class: 'vs-result' },
     Card(null, 'vs-zone', verdict,
