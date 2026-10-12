@@ -54,8 +54,8 @@ Soyons honnêtes sur les limites :
   avec onze noms de paramètre). Prouver qu'aucune ligne masquée n'est à toi obligerait à révéler les autres
   créateurs, et TLSNotary ne sait pas encore prouver « cette ligne n'est pas à toi » sans la montrer.
   La preuve garantit que tout ce qui est montré est authentique, pas que rien n'a été omis. Pour le
-  vérifier toi-même : inscris-toi avec ton propre lien, fais un dépôt, puis relance une vérification ; ton
-  compte doit apparaître dans la liste ;
+  vérifier toi-même : demande à un proche ou un ami de s'inscrire avec ton lien et de faire un dépôt,
+  puis relance une vérification ; son compte doit apparaître dans la liste ;
 - TLSNotary est en version alpha et n'a pas encore été audité par un tiers.
 
 ## Comment sont comptés les chiffres affichés
