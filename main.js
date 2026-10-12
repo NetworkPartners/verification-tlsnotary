@@ -326,6 +326,17 @@ async function showResult(v) {
     'Réponse du casino telle que prouvée (▒ = masqué par la preuve : autres créateurs et commission de l\'agence) :',
     v.body.split(/(\u0000+)/).map((part) => !part ? '' : part[0] !== '\u0000' ? part : part.length < 200 ? '▒▒▒' : `[${fmtBytes(part.length)} masqués]`).join(''),
   ].join('\n')
+  // Compact form for the AI link: the proven rows as JSON, minus the campaign name (identical on
+  // every row, said once), biggest deposits first; masked parts summed up in one line.
+  const masked = (v.body.match(/\u0000+/g) || [])
+  askData = {
+    head: proofText.split('\n').slice(0, 7).join('\n'),
+    prefix: CASINO === 'celsius' ? FILTER.replace('"campaign_name":"', '') : '',
+    maskedLine: `Reste de la réponse masqué par la preuve (autres créateurs, commission de l'agence) : ${masked.length} blocs, ${fmtBytes(masked.reduce((n, m) => n + m.length, 0))}.`,
+    rows: [...v.body.matchAll(/\{[^{}\u0000]*\}/g)].map((m) => {
+      try { const o = JSON.parse(m[0]); delete o.campaign_name; return o } catch { return null }
+    }).filter(Boolean).sort((a, b) => num(b.dep_sum ?? b.Net_Deposits ?? b.Deposits) - num(a.dep_sum ?? a.Net_Deposits ?? a.Deposits)),
+  }
   light(['casino', 'wire', 'you', 'np'])
   document.querySelectorAll('[data-n="wire"]').forEach((w) => w.classList.remove('flow'))
   show('result')
@@ -350,6 +361,7 @@ function showFailure(message) {
 
 // ── Share the proof: copy it, or ask an independent AI about it ───────────────────────────
 let proofText = ''
+let askData = null
 const ASK = {
   chatgpt: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}`,
   claude: (q) => `https://claude.ai/new?q=${encodeURIComponent(q)}`,
@@ -365,30 +377,44 @@ const FIELDS = {
     "Net_Deposits est le total de ses dépôts sur cette période.",
 }
 const askPrompt = (proof) =>
-  `Je suis créateur de contenu, affilié à des casinos via l'agence Network Partners. Pour me prouver que les chiffres de mon ` +
-  `dashboard sont réels, ils m'ont donné une page de vérification basée sur TLSNotary (projet open source de l'équipe de ` +
-  `recherche de la Fondation Ethereum, mode MPC-TLS) : mon navigateur participe à la connexion chiffrée avec le site ` +
-  `d'affiliation du casino et vérifie une preuve que la réponse vient bien de ce serveur (certificat TLS) et n'a pas été ` +
-  `modifiée. Seules mes lignes sont révélées, le reste est masqué.\n\n` +
-  `La vérification cryptographique a été faite par mon navigateur (vérificateur TLSNotary compilé en WebAssembly), qui l'a ` +
-  `déclarée valide : la page refuse la preuve si le serveur n'est pas le bon, si la période demandée au casino n'est pas ` +
-  `celle affichée, ou si une ligne révélée ne m'appartient pas. Ce qui suit est la transcription des données prouvées. Le ` +
-  `fichier de preuve brut n'est pas fourni, parce qu'il permettrait de déduire la taille des champs masqués (dont la ` +
-  `commission de l'agence).\n\n${FIELDS[CASINO] ? FIELDS[CASINO] + '\n\n' : ''}` +
-  `Le code de la page de vérification est public : https://github.com/NetworkPartners/verification-tlsnotary (avec la ` +
-  `recette pour recompiler le vérificateur depuis la source officielle de TLSNotary et les empreintes SHA-256 des fichiers ` +
-  `servis par https://verif.networkpartners.xyz).\n\n` +
-  `Limite connue, assumée par l'agence : la preuve garantit que les lignes affichées sont authentiques, pas que la liste ` +
-  `est complète. Le site d'affiliation du casino renvoie tous les joueurs du compte de l'agence (tous ses créateurs) en une ` +
-  `seule réponse, sans filtre par créateur côté casino (testé) ; c'est donc le serveur de l'agence qui choisit quelles ` +
-  `lignes révéler. Prouver qu'aucune ligne masquée ne m'appartient obligerait à révéler les autres créateurs, et TLSNotary ` +
-  `ne sait pas encore prouver « cette ligne n'est pas à toi » sans la montrer. La parade proposée : m'inscrire avec mon ` +
-  `propre lien, déposer, et vérifier que j'apparais.\n\n` +
-  `${CASINO === 'celsius' ? 'Le chiffre FTD affiché = nombre de joueurs inscrits sur la période qui ont au moins un dépôt (dep_count > 0).' : 'Le chiffre « déposants » affiché = nombre de joueurs avec au moins un dépôt sur la période.'}\n\n` +
-  `Je ne te demande pas de valider mon contrat ni le calcul de ma commission, seulement ce que cette preuve établit.\n\n` +
-  `Peux-tu m'expliquer simplement :\n1. ce que cette vérification garantit vraiment, et ses limites ;\n` +
-  `2. si les données ci-dessous te semblent cohérentes ;\n3. ce que je peux vérifier moi-même pour en être sûr.\n\n` +
-  `Voici la preuve affichée par la page :\n\n${proof}`
+  `Je suis créateur de contenu, affilié à des casinos via l'agence Network Partners. Pour prouver que mon dashboard ` +
+  `est juste, ils m'ont donné une page de vérification TLSNotary (open source, équipe de recherche de la Fondation ` +
+  `Ethereum, mode MPC-TLS) : mon navigateur participe à la connexion chiffrée avec le site d'affiliation du casino, ` +
+  `contrôle son certificat, puis vérifie une preuve que la réponse n'a pas été modifiée. Seules mes lignes sont révélées.\n\n` +
+  `Mon navigateur (vérificateur TLSNotary en WebAssembly) a déclaré la preuve valide. La page refuse la preuve si le ` +
+  `serveur n'est pas le bon, si la période demandée au casino n'est pas celle affichée, ou si une ligne révélée ne ` +
+  `m'appartient pas. Le fichier de preuve brut n'est pas fourni : il laisserait déduire la taille des champs masqués ` +
+  `(dont la commission de l'agence).\n\n${FIELDS[CASINO] ? FIELDS[CASINO] + '\n\n' : ''}` +
+  `${CASINO === 'celsius' ? 'FTD affiché = joueurs inscrits sur la période avec au moins un dépôt (dep_count > 0).' : 'Déposants affichés = joueurs avec au moins un dépôt sur la période.'}\n\n` +
+  `Code public de la page : https://github.com/NetworkPartners/verification-tlsnotary (recette pour recompiler le ` +
+  `vérificateur depuis la source officielle de TLSNotary, empreintes SHA-256 des fichiers servis par ` +
+  `https://verif.networkpartners.xyz).\n\n` +
+  `Limite connue et assumée : la preuve garantit que les lignes affichées sont authentiques, pas que la liste est ` +
+  `complète. Le casino renvoie en une seule réponse les joueurs de tous les créateurs de l'agence, sans filtre par ` +
+  `créateur possible de son côté (testé) : le serveur de l'agence choisit les lignes à révéler, et prouver qu'aucune ` +
+  `ligne masquée n'est à moi obligerait à révéler les autres créateurs. Parade : m'inscrire avec mon lien, déposer, ` +
+  `vérifier que j'apparais.\n\n` +
+  `Je ne te demande pas de valider mon contrat ni ma commission, seulement ce que cette preuve établit. Explique-moi ` +
+  `simplement : 1. ce qu'elle garantit et ses limites ; 2. si les données ci-dessous sont cohérentes ; 3. ce que je ` +
+  `peux vérifier moi-même.\n\nLa preuve :\n\n${proof}`
+// The AI message carries the proof itself. A link has a size limit (servers refuse past ~16 000
+// characters), so rows are dropped from the end (smallest deposits) only when they cannot all fit.
+const LINK_MAX = 15000
+function askMessage() {
+  const d = askData
+  if (!d) return askPrompt(proofText)
+  const build = (n) => askPrompt([
+    d.head,
+    d.prefix ? `Toutes les lignes révélées ont un campaign_name qui commence par « ${d.prefix} » (retiré de chaque ligne ci-dessous pour la place, la suite du nom est masquée).` : '',
+    d.maskedLine,
+    `Lignes prouvées (JSON tel que reçu du casino), ${n < d.rows.length ? `${n} sur ${d.rows.length}, les plus gros dépôts d'abord` : `${d.rows.length} au total`} :`,
+    ...d.rows.slice(0, n).map((r) => JSON.stringify(r)),
+    n < d.rows.length ? `(${d.rows.length - n} autres lignes non incluses faute de place dans le lien${d.rows.slice(n).every((r) => !num(r.dep_sum ?? r.Net_Deposits ?? r.Deposits)) ? ', toutes sans dépôt' : ''} ; la page les affiche toutes.)` : '',
+  ].filter(Boolean).join('\n'))
+  let n = d.rows.length
+  while (n > 0 && encodeURIComponent(build(n)).length > LINK_MAX) n--
+  return build(n)
+}
 function toast(text) {
   $('toast').textContent = text; $('toast').hidden = false
   clearTimeout(toast.t); toast.t = setTimeout(() => { $('toast').hidden = true }, 2600)
@@ -399,18 +425,9 @@ async function copy(text) {
 $('copyProof').onclick = async () => toast(await copy(proofText) ? 'Preuve copiée' : 'Copie impossible dans ce navigateur')
 document.querySelectorAll('[data-ask]').forEach((b) => {
   b.onclick = async () => {
-    const full = askPrompt(proofText)
-    // A link carries a few thousand characters at most: past that, the question opens with the
-    // start of the proof and the whole thing waits in the clipboard, ready to paste.
-    const MAX = 6000
-    const fits = encodeURIComponent(full).length <= MAX
-    await copy(full)
-    let q = full
-    if (!fits) {
-      q = askPrompt('(La preuve complète est dans mon presse-papier, je la colle juste après ce message.)')
-    }
+    const q = askMessage()
     window.open(ASK[b.dataset.ask](q), '_blank', 'noopener')
-    toast(fits ? 'Question envoyée, la preuve est aussi dans ton presse-papier' : 'Preuve trop longue pour le lien : colle-la (Cmd/Ctrl + V) dans la conversation')
+    toast('Conversation ouverte avec la preuve')
   }
 })
 
