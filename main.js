@@ -382,13 +382,25 @@ function updateProgress() {
   const mb = traffic.sent + traffic.recv
   if ($('meterValue')) { $('meterValue').textContent = fmtMB(mb); $('meterBar').style.width = `${Math.min(100, (mb / 63e6) * 100)}%` }
 }
+// The running screen is built ONCE; each step only swaps the route and the step list in place.
+// Rebuilding the whole screen replayed its entrance animation and flashed black at every step.
 function renderRun(failedAt, error) {
   if (failedAt != null) STEPS[failedAt].error = error
-  view(h('div', { class: 'vs-center' },
-    h('h1', { class: 'vs-title vs-title--run' }, failedAt != null ? 'Vérification interrompue' : 'Vérification en cours'),
-    h('p', { class: 'vs-lead', style: { marginTop: '8px' } }, failedAt != null ? error : 'Laisse cet onglet ouvert, ça prend une vingtaine de secondes.'),
-    h('div', { class: 'vs-path' }, ProofPath({ status: failedAt != null ? 'refused' : 'running', stage: stageOf(Math.max(0, cur)) })),
-    h('div', { class: 'vs-run' }, Card(null, null, Progress(), StepList(STEPS, cur, failedAt, cur === 2)))))
+  const status = failedAt != null ? 'refused' : 'running'
+  if (!$('runPath')) {
+    view(h('div', { class: 'vs-center' },
+      h('h1', { class: 'vs-title vs-title--run', id: 'runTitle' }, 'Vérification en cours'),
+      h('p', { class: 'vs-lead', id: 'runLead', style: { marginTop: '8px' } }, 'Laisse cet onglet ouvert, ça prend une vingtaine de secondes.'),
+      h('div', { class: 'vs-path', id: 'runPath' }),
+      h('div', { class: 'vs-run' }, Card(null, null, Progress(), h('div', { id: 'runSteps' })))))
+  }
+  if (failedAt != null) { $('runTitle').textContent = 'Vérification interrompue'; $('runLead').textContent = error }
+  const stage = stageOf(Math.max(0, cur))
+  if ($('runPath').dataset.k !== status + stage) {
+    $('runPath').dataset.k = status + stage
+    $('runPath').replaceChildren(ProofPath({ status, stage }))
+  }
+  $('runSteps').replaceChildren(StepList(STEPS, cur, failedAt, cur === 2))
   updateProgress()
 }
 function onStep(label) { const i = WORKER_STEPS.indexOf(label); if (i < 0) return; cur = i; renderRun() }
@@ -450,9 +462,14 @@ function ComparisonTable(ps, expected) {
           withNgr && h('th', { scope: 'col', class: 'np-compare__num' }, 'NGR'), h('th', { scope: 'col', class: 'np-compare__st' }, 'Statut'))),
         h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player' }, r.who), cell(r.deposits, r.dash?.deposits),
           withNgr && (r.ngr == null ? h('td', { class: 'np-compare__num' }) : cell(r.ngr, r.dash?.ngr)), h('td', { class: 'np-compare__st' }, StatusPill(status(r)))))))),
+    gaps > 0 && h('div', { class: 'np-note' }, Icon('info', 18),
+      h('div', null, h('b', null, 'D\u2019où peut venir un écart ?'),
+        ` Ton dashboard se synchronise avec ${NAME} toutes les 3${NB}h${agoText ? ` (dernière fois ${agoText})` : ''}. ` +
+        `Un joueur qui a joué ou déposé depuis a déjà bougé chez ${NAME} : c\u2019est surtout le NGR, qui change à chaque mise. ` +
+        `Si l\u2019écart est toujours là après la prochaine synchronisation, signale-le nous : c\u2019est le chiffre de ${NAME}, prouvé ci-dessus, qui fait foi.`)),
     h('div', { class: 'np-compare__foot' },
       h('span', { class: cx('np-compare__summary', gaps || !expected ? 'is-gap' : 'is-same') }, Icon(gaps || !expected ? 'alert' : 'check', 16, 2.25), summary),
-      agoText && h('span', { class: 'np-compare__updated' }, `Dernière mise à jour du dashboard avec ${NAME}${NB}: ${agoText} (toutes les 3${NB}heures)`))) }
+      agoText && !gaps && h('span', { class: 'np-compare__updated' }, `Dernière mise à jour du dashboard avec ${NAME}${NB}: ${agoText} (toutes les 3${NB}heures)`))) }
 }
 
 function renderResult(v, ps, expected) {
@@ -464,8 +481,8 @@ function renderResult(v, ps, expected) {
   const cmp = ComparisonTable(ps, expected)
   const at = v.when ? v.when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : hhmmss().slice(0, 5)
   const verdict = cmp.gaps
-    ? Verdict('gap', `Tes chiffres ${NAME} sont prouvés, mais ton dashboard a ${cmp.gaps} écart${cmp.gaps > 1 ? 's' : ''}`,
-      `Ce sont les chiffres de ${NAME} qui comptent : le dashboard les reprend au prochain passage.`)
+    ? Verdict('gap', `Tes chiffres ${NAME} sont prouvés, ton dashboard diffère sur ${cmp.gaps} joueur${cmp.gaps > 1 ? 's' : ''}`,
+      `Le détail est dans le tableau : chiffre de ${NAME} en premier, celui de ton dashboard en dessous.`)
     : Verdict('confirmed', `Tes chiffres ${NAME}${PERIOD_PHRASE} sont confirmés`, `Vérifié par ton navigateur à ${at}`)
   view(h('div', { class: 'vs-result' },
     Card(null, 'vs-zone', verdict,
