@@ -47,7 +47,8 @@ Soyons honnêtes sur les limites :
   exempt d'erreur ;
 - le calcul de ta commission : la preuve porte sur tes joueurs, leurs dépôts et leur NGR, pas sur ton
   contrat ;
-- que la liste est **complète** : c'est notre serveur qui choisit quelles lignes de la réponse révéler.
+- que la liste est **complète** : c'est notre serveur qui choisit quelles lignes de la réponse révéler,
+  parce qu'on ne peut pas divulguer les pseudos et les chiffres des joueurs de nos autres créateurs.
   Le site d'affiliation du casino renvoie tous les joueurs de tous nos créateurs en une seule réponse, et
   ne sait pas filtrer par créateur de son côté (testé sur CellXpert, la plateforme de Rolletto et MyStake,
   avec onze noms de paramètre). Prouver qu'aucune ligne masquée n'est à toi obligerait à révéler les autres

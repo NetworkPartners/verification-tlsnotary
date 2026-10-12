@@ -175,7 +175,8 @@ const askPrompt = (proof) =>
   `Limite connue, écrite par l'agence elle-même sur la page : la preuve garantit que les lignes affichées sont ` +
   `authentiques, pas que la liste est complète. Le casino renvoie en une seule réponse les joueurs de tous les ` +
   `créateurs de l'agence, sans filtre par créateur possible de son côté (testé) : le serveur de l'agence choisit les ` +
-  `lignes à révéler, et prouver qu'aucune ligne masquée n'est à moi obligerait à révéler les autres créateurs. ` +
+  `lignes à révéler, parce qu'elle ne peut pas divulguer les pseudos et les chiffres des joueurs de ses autres ` +
+  `créateurs ; prouver qu'aucune ligne masquée n'est à moi obligerait à révéler les autres créateurs. ` +
   `Contrôle possible de mon côté : chaque joueur que je connais (un proche, ou moi inscrit avec mon lien) doit ` +
   `apparaître dans la liste.\n\n` +
   `Je ne te demande pas de valider mon contrat ni ma commission, seulement ce que cette vérification établit. ` +
@@ -617,7 +618,7 @@ function sheetBody(tab) {
     h('p', null, 'Seules tes lignes sont révélées. Les autres créateurs et notre commission restent masqués par la preuve elle-même.'),
     h('h3', null, 'Les limites, honnêtement'),
     h('p', null, `La preuve garantit que ces chiffres sont ceux que ${HOST} a envoyés, à ce moment-là, pour la requête affichée. Elle ne dit pas si les calculs internes de ${NAME} sont justes : pour ça, seul ${NAME} peut répondre.`),
-    h('p', null, 'Elle garantit que chaque ligne affichée est authentique, pas que la liste est complète. Le site du casino nous renvoie tous les joueurs de tous nos créateurs d’un coup, sans pouvoir filtrer par créateur : c’est notre serveur qui choisit quelles lignes révéler. Pour le vérifier toi-même : inscris-toi avec ton propre lien, fais un dépôt, puis relance une vérification ; tu dois apparaître dans la liste.'),
+    h('p', null, 'Elle garantit que chaque ligne affichée est authentique, pas que la liste est complète. Le site du casino nous renvoie tous les joueurs de tous nos créateurs d’un coup, sans pouvoir filtrer par créateur : c’est notre serveur qui choisit quelles lignes révéler. On ne peut pas faire autrement sans te montrer les pseudos et les chiffres des joueurs de nos autres créateurs, qui doivent rester confidentiels. Pour le vérifier toi-même : inscris-toi avec ton propre lien, fais un dépôt, puis relance une vérification ; tu dois apparaître dans la liste.'),
     h('p', null, 'La technologie s’appelle TLSNotary. Elle est open source et développée au sein de la Fondation Ethereum. Le code de cette page est public, avec de quoi vérifier que c’est exactement lui qui tourne ici.'),
     Button({ variant: 'secondary', icon: 'code', iconAfter: 'external', label: 'Voir le code sur GitHub', href: REPO }))
 }
