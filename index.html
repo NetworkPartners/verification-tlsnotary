@@ -123,7 +123,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-progress__clock { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 500; color: var(--ink); }
 .np-progress__clock .np-icon { color: var(--ink-faint); }
 .np-progress__track { height: 6px; border-radius: var(--radius-full); background: var(--fill); overflow: hidden; }
-.np-progress__bar { height: 100%; border-radius: inherit; background: var(--lime); box-shadow: 0 0 12px var(--lime); transition: width .3s ease; }
+.np-progress__bar { height: 100%; border-radius: inherit; background: var(--lime); box-shadow: 0 0 12px var(--lime); }
 
 /* Verdict */
 .np-verdict { display: flex; align-items: flex-start; gap: var(--space-4); animation: np-in .45s ease both; }
@@ -167,6 +167,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-compare__table td, .np-compare__table tbody th { padding: 10px var(--space-4); vertical-align: top; }
 .np-compare__player { text-align: left; font-weight: 500; color: var(--ink); white-space: nowrap; }
 .np-compare__mark { display: none; }
+.np-compare__table tbody .np-compare__player { width: 100%; max-width: 0; cursor: pointer; }
+.np-compare__name { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top; }
+.np-compare__player.is-open { white-space: normal; }
+.np-compare__player.is-open .np-compare__name { white-space: normal; overflow-wrap: anywhere; }
 .vs-dock { display: none; }
 .vs-short { display: none; }
 .np-compare__table .np-compare__num { text-align: right; color: var(--ink); white-space: nowrap; width: 1%; padding-left: var(--space-8); }
@@ -236,7 +240,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-sheet__sub { margin: var(--space-1) 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted); }
 .np-sheet__close { -webkit-appearance: none; appearance: none; flex: none; width: 40px; height: 40px; border-radius: var(--radius-full); border: 1px solid var(--line-strong); background: var(--fill); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
 .np-sheet__close:hover { border-color: var(--ink-faint); }
-.np-sheet__body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 var(--space-6) var(--space-6); }
+.np-sheet__body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 var(--space-6) var(--space-6); }
 
 /* StateMessage */
 .np-state { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 480px; margin: 0 auto; padding: var(--space-8) var(--space-4); animation: np-in .45s ease both; }
@@ -306,6 +310,7 @@ body { overflow: hidden; }
 
 @media (max-width: 720px) {
   body { overflow: auto; }
+  body.is-sheet-open { overflow: hidden; }
   .vs { height: auto; min-height: 100%; }
   .vs-main { flex: none; padding: var(--space-5) var(--space-4) var(--space-12); }
   .vs-center { justify-content: flex-start; padding-top: var(--space-6); }
@@ -343,6 +348,8 @@ body { overflow: hidden; }
   .vs-result .np-figure { padding: var(--space-3) var(--space-4); }
   .np-compare__table .np-compare__st { display: none; }
   .np-compare__mark { display: inline-flex; vertical-align: -6px; margin-right: var(--space-2); }
+  .np-compare__name { max-width: calc(100% - 32px); }
+  .np-compare__scroll { overflow-x: hidden; }
   .np-compare__table .np-compare__num { padding-left: var(--space-2); }
   .np-compare__table td:last-of-type, .np-compare__table thead th:last-of-type { padding-right: var(--space-3); }
   .vs-aside .vs-actions .np-btn:first-child { display: none; }
@@ -356,7 +363,7 @@ body { overflow: hidden; }
   .np-path__sub, .np-path--sm .np-path__sub { white-space: nowrap; font-size: 10.5px; }
   .np-path__link { min-width: 28px; }
   .np-sheet { align-items: flex-end; }
-  .np-sheet__panel { margin: 0; width: 100%; max-height: 92vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; animation-name: np-rise; }
+  .np-sheet__panel { margin: 0; width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; animation-name: np-rise; }
   .np-sheet__head, .np-sheet__body { padding-left: var(--space-5); padding-right: var(--space-5); }
   .np-facts { grid-template-columns: 1fr; }
   .np-facts dd { border-top: 0; padding-top: 0; }

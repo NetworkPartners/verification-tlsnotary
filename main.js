@@ -386,9 +386,24 @@ function progressValue() {
   if (cur === 2) return 0.15 + 0.55 * Math.min(1, (traffic.sent + traffic.recv) / 63e6)
   return cur === 3 ? 0.78 : 0.9
 }
+// The bar is drawn every frame: it eases toward the real progress and, inside a step, creeps toward
+// that step's ceiling, so it never jumps nor freezes between two worker events.
+const STEP_CEIL = [0.10, 0.15, 0.70, 0.88, 0.97]
+let shown = 0, lastFrame = 0, drawing = false
+function drawProgress(now) {
+  const bar = $('progBar')
+  if (!bar) { lastFrame = 0; drawing = false; return }
+  const dt = lastFrame ? Math.min(0.1, (now - lastFrame) / 1000) : 0
+  lastFrame = now
+  const floor = progressValue(), ceil = Math.max(floor, STEP_CEIL[Math.min(cur, STEP_CEIL.length - 1)] ?? floor)
+  if (shown < floor) shown += (floor - shown) * Math.min(1, dt * 3)
+  else shown += (ceil - shown) * (1 - Math.exp(-dt / 8))
+  bar.style.width = `${(shown * 100).toFixed(2)}%`
+  requestAnimationFrame(drawProgress)
+}
 function updateProgress() {
   if (!$('progBar')) return
-  $('progBar').style.width = `${Math.round(progressValue() * 100)}%`
+  if (!drawing) { drawing = true; requestAnimationFrame(drawProgress) }
   $('progLabel').textContent = `Étape ${Math.max(1, cur + 1)} sur ${STEPS.length}`
   const mb = traffic.sent + traffic.recv
   if ($('meterValue')) { $('meterValue').textContent = fmtMB(mb); $('meterBar').style.width = `${Math.min(100, (mb / 63e6) * 100)}%` }
@@ -472,7 +487,7 @@ function ComparisonTable(ps, expected) {
       h('table', { class: 'np-compare__table' },
         h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Joueur'), h('th', { scope: 'col', class: 'np-compare__num' }, 'Déposé'),
           withNgr && h('th', { scope: 'col', class: 'np-compare__num' }, 'NGR'), h('th', { scope: 'col', class: 'np-compare__st' }, 'Statut'))),
-        h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player' }, h('span', { class: 'np-compare__mark' }, StatusPill(status(r))), r.who), cell(r.deposits, r.dash?.deposits),
+        h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player', title: r.who, onclick: (e) => e.currentTarget.classList.toggle('is-open') }, h('span', { class: 'np-compare__mark' }, StatusPill(status(r))), h('span', { class: 'np-compare__name' }, r.who)), cell(r.deposits, r.dash?.deposits),
           withNgr && (r.ngr == null ? h('td', { class: 'np-compare__num' }) : cell(r.ngr, r.dash?.ngr)), h('td', { class: 'np-compare__st' }, StatusPill(status(r)))))))),
     gaps > 0 && h('div', { class: 'np-note' }, Icon('info', 18),
       h('div', null, h('b', null, 'D\u2019où peut venir un écart ?'),
@@ -628,13 +643,14 @@ let sheetTab = null
 function openSheet(tab) {
   sheetTab = tab
   $('sheet').hidden = false
+  document.body.classList.add('is-sheet-open')
   $('sheetTabs').replaceChildren(...TABS.map(([id, label, short]) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === tab), tabindex: id === tab ? 0 : -1,
     class: cx('np-tabs__tab', id === tab && 'is-active'), onclick: () => openSheet(id) },
     h('span', { class: 'vs-long' }, label), h('span', { class: 'vs-short' }, short))))
   $('sheetBody').replaceChildren(sheetBody(tab))
   $('sheetPanel').focus()
 }
-function closeSheet() { $('sheet').hidden = true; sheetTab = null }
+function closeSheet() { $('sheet').hidden = true; document.body.classList.remove('is-sheet-open'); sheetTab = null }
 $('sheetClose').onclick = closeSheet
 $('sheetScrim').onclick = closeSheet
 addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheetTab) closeSheet() })
@@ -646,7 +662,7 @@ async function ask(which) {
 
 // ── Run ───────────────────────────────────────────────────────────────────────────────────
 function start() {
-  t0 = performance.now()
+  t0 = performance.now(); shown = 0
   cur = 0
   renderRun()
   clockTimer = setInterval(() => { if ($('progClock')) $('progClock').textContent = fmtClock((performance.now() - t0) / 1000) }, 250)
