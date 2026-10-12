@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vérification de tes chiffres · Network Partners</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23050505%22/%3E%3Cg%20transform%3D%22translate(4%204)%22%20fill%3D%22none%22%20stroke%3D%22%236EE600%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%2013c0%205-3.5%207.5-7.66%208.95a1%201%200%200%201-.67-.01C7.5%2020.5%204%2018%204%2013V6a1%201%200%200%201%201-1c2%200%204.5-1.2%206.24-2.72a1.17%201.17%200%200%201%201.52%200C14.51%203.81%2017%205%2019%205a1%201%200%200%201%201%201z%22/%3E%3Cpath%20d%3D%22m9%2012%202%202%204-4%22/%3E%3C/g%3E%3C/svg%3E">
+<meta name="theme-color" content="#050505">
+<meta name="description" content="Tes chiffres, vérifiés directement auprès du casino avec TLSNotary.">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  :root {
+    --bg: #050505; --card: #0f0f0f; --card2: #161616; --line: rgba(255,255,255,.08);
+    --text: #f2f2f0; --muted: #8d8d88; --dim: #5f5f5a; --lime: #6EE600; --ink: #0b1205; --bad: #ff6b5b; --warn: #f2b84b;
+    --display: 'Space Grotesk', system-ui, sans-serif; --body: 'Inter', system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box }
+  html { -webkit-text-size-adjust: 100% }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14.5px/1.55 var(--body); min-height: 100dvh; display: flex; flex-direction: column }
+  [hidden] { display: none !important }
+  button { font: inherit; color: inherit }
+
+  /* One screen on a computer: the page itself never scrolls, only a long list inside a card does. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    body { height: 100dvh; overflow: hidden }
+  }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; color: var(--muted); font-size: 13px }
+  header b { color: var(--text); font-family: var(--display) }
+  header .tls { display: inline-flex; align-items: center; gap: 6px }
+  main { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px 20px 24px }
+  .stage { width: 100%; animation: in .35s ease }
+  @keyframes in { from { opacity: 0; transform: translateY(6px) } }
+  @media (prefers-reduced-motion: reduce) { .stage { animation: none } }
+
+  h1 { font: 700 26px/1.2 var(--display); letter-spacing: -.02em; margin: 0 0 10px }
+  .sub { color: var(--muted); margin: 0 }
+
+  /* ── The route: casino → encrypted line → your browser, Network Partners on the side ── */
+  .route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0 }
+  .node { display: flex; flex-direction: column; align-items: center; text-align: center; width: 128px }
+  .node .ic { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--card2); border: 1px solid var(--line); color: var(--dim); transition: all .4s }
+  .node b { font: 700 14.5px var(--display); margin-top: 10px }
+  .node span { color: var(--muted); font-size: 12px }
+  .node.on .ic { background: var(--lime); border-color: var(--lime); color: var(--ink); box-shadow: 0 0 0 6px rgba(110,230,0,.08) }
+  .wire { position: relative; height: 64px; display: flex; align-items: center; margin-bottom: 38px }
+  .wire:before { content: ''; position: absolute; left: 6px; right: 6px; top: 50%; border-top: 2px dashed #2c2c2a; transition: border-color .4s }
+  .wire.on:before { border-top: 2px solid var(--lime) }
+  .wire .pill { position: relative; margin: 0 auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--dim); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; transition: all .4s; white-space: nowrap }
+  .wire.on .pill { color: var(--lime); border-color: rgba(110,230,0,.4); background: #0d1309 }
+  .wire .dot { position: absolute; top: calc(50% - 4px); width: 8px; height: 8px; border-radius: 50%; background: var(--lime); opacity: 0 }
+  .wire.flow .dot { animation: flow 1.6s linear infinite }
+  .wire.flow .dot:nth-child(3) { animation-delay: .53s } .wire.flow .dot:nth-child(4) { animation-delay: 1.06s }
+  @keyframes flow { 0% { left: 6px; opacity: 0 } 10% { opacity: 1 } 90% { opacity: 1 } 100% { left: calc(100% - 14px); opacity: 0 } }
+  @media (prefers-reduced-motion: reduce) { .wire.flow .dot { animation: none } }
+  .np { display: flex; align-items: center; gap: 12px; text-align: left; margin: 14px auto 0; max-width: 440px; padding: 10px 14px; border: 1px dashed #2c2c2a; border-radius: 14px; transition: border-color .4s }
+  .np .ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--card2); color: var(--dim); flex: none; transition: color .4s }
+  .np b { font-size: 13px; display: block } .np span { color: var(--muted); font-size: 12px }
+  .np .no { margin-left: auto; font: 700 11.5px var(--display); color: var(--bad); white-space: nowrap }
+  .np.on { border-color: rgba(110,230,0,.3) } .np.on .ic { color: var(--lime) }
+
+  /* ── 1. Intro ── */
+  #intro { max-width: 560px; text-align: center }
+  #intro .route { margin: 30px auto 6px; max-width: 460px }
+  .go { display: inline-flex; align-items: center; gap: 10px; margin-top: 30px; border: 0; border-radius: 16px; padding: 18px 40px; cursor: pointer; background: var(--lime); color: var(--ink); font: 700 17px var(--display); box-shadow: 0 10px 40px rgba(110,230,0,.18) }
+  .go:hover { filter: brightness(1.06) }
+  .go:focus-visible, .btn:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px }
+  .go[disabled] { opacity: .35; cursor: default; box-shadow: none }
+  .note { color: var(--dim); font-size: 12px; margin: 12px 0 0 }
+
+  /* ── 2. Running ── */
+  #run { max-width: 620px; text-align: center }
+  #run .route { max-width: 500px; margin: 0 auto }
+  .now { display: flex; gap: 16px; align-items: flex-start; text-align: left; margin: 30px auto 0; max-width: 520px; min-height: 92px }
+  .spin { width: 40px; height: 40px; flex: none; border-radius: 50%; border: 3px solid #222; border-top-color: var(--lime); animation: sp .9s linear infinite }
+  @keyframes sp { to { transform: rotate(360deg) } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none } }
+  .now.fail .spin { animation: none; border-color: var(--bad) }
+  .now b { display: block; font: 700 18px/1.3 var(--display) }
+  .now p { margin: 4px 0 0; color: var(--muted) }
+  .done { list-style: none; margin: 18px auto 0; padding: 0; max-width: 520px; text-align: left; font-size: 13px; color: var(--muted) }
+  .done li { display: flex; gap: 10px; align-items: center; padding: 4px 0; animation: in .3s ease }
+  .done li i { width: 18px; height: 18px; border-radius: 50%; background: var(--lime); color: var(--ink); display: grid; place-items: center; flex: none }
+  .done li:nth-last-child(n+4) { opacity: .45 }
+  .meter { display: flex; justify-content: space-between; max-width: 520px; margin: 22px auto 0; color: var(--dim); font-size: 12px }
+  .bar { height: 4px; border-radius: 4px; background: #1b1b1b; max-width: 520px; margin: 6px auto 0; overflow: hidden }
+  .bar i { display: block; height: 100%; width: 0; background: var(--lime); transition: width .6s ease }
+
+  /* ── 3. Result: the comparison on the left, why you can trust it on the right ── */
+  #result { max-width: 1120px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start }
+  @media (min-width: 900px) and (min-height: 600px) { .panel { max-height: calc(100dvh - 110px) } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px 24px; display: flex; flex-direction: column; min-height: 0 }
+  .verdict { display: flex; gap: 12px; align-items: center; margin-bottom: 16px }
+  .verdict .ok { width: 34px; height: 34px; border-radius: 50%; background: var(--lime); color: var(--ink); display: grid; place-items: center; flex: none }
+  .verdict.bad .ok { background: var(--bad) }
+  .verdict h1 { font-size: 20px; margin: 0 }
+  .verdict p { margin: 2px 0 0; color: var(--muted); font-size: 13px }
+  .figs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--card2); border-radius: 14px; margin-bottom: 18px }
+  .figs div { padding: 12px 6px; text-align: center } .figs div + div { border-left: 1px solid var(--line) }
+  .figs b { display: block; font: 700 22px/1.1 var(--display); font-variant-numeric: tabular-nums }
+  .figs small { color: var(--muted); font-size: 11.5px }
+  h2 { font: 700 15.5px var(--display); margin: 0 0 4px }
+  .cmpsum { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; margin: 0 0 10px }
+  .pill { font: 700 11.5px var(--display); border-radius: 999px; padding: 2px 10px; background: rgba(110,230,0,.14); color: var(--lime); white-space: nowrap }
+  .pill.warn { background: rgba(242,184,75,.14); color: var(--warn) }
+  .tablewrap { flex: 0 1 auto; min-height: 0; overflow: auto; border-top: 1px solid var(--line) }
+  table { width: 100%; border-collapse: collapse; font-size: 13px }
+  th { position: sticky; top: 0; background: var(--card); color: var(--muted); font-weight: 500; font-size: 11.5px; text-align: right; padding: 8px 6px; border-bottom: 1px solid var(--line) }
+  th:first-child, td:first-child { text-align: left }
+  td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; vertical-align: top }
+  td small { display: block; color: var(--warn); font-size: 11px }
+  .s { display: inline-block; font-size: 11px; border-radius: 999px; padding: 1px 8px; white-space: nowrap; background: rgba(110,230,0,.12); color: var(--lime) }
+  .s.ko { background: rgba(242,184,75,.14); color: var(--warn) }
+  .why { margin: 8px 0 0; color: var(--muted); font-size: 12px }
+
+  .trust .route { margin: 14px 0 0 }
+  .trust .node { width: 104px } .trust .node .ic { width: 52px; height: 52px; border-radius: 16px }
+  .trust .wire { height: 52px; margin-bottom: 34px }
+  .trust .np { margin: 10px 0 0; max-width: none }
+  .checks { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 12px }
+  .checks li { display: flex; gap: 12px; align-items: flex-start }
+  .checks li i { width: 22px; height: 22px; border-radius: 50%; background: var(--lime); color: var(--ink); display: grid; place-items: center; flex: none; margin-top: 1px }
+  .checks b { display: block; font-size: 13.5px } .checks span { color: var(--muted); font-size: 12.5px }
+  .actions { display: flex; gap: 10px; padding-top: 20px }
+  .btn { flex: 1; border: 1px solid var(--line); background: var(--card2); border-radius: 12px; padding: 11px 12px; cursor: pointer; font-weight: 600; font-size: 13px }
+  .btn:hover { border-color: rgba(255,255,255,.2) }
+  .btn.p { background: var(--lime); color: var(--ink); border-color: var(--lime) }
+
+  @media (max-width: 899px), (max-height: 599px) {
+    main { align-items: flex-start }
+    #result { grid-template-columns: 1fr }
+    .tablewrap { max-height: 50vh }
+  }
+  @media (max-width: 520px) {
+    header { padding: 14px 16px } main { padding: 8px 16px 24px }
+    .node { width: 96px } .node .ic { width: 52px; height: 52px; border-radius: 16px }
+    .wire .pill span { display: none }
+    h1 { font-size: 22px }
+  }
+
+  /* ── The proof, in a side drawer: everything the browser did and received ── */
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 10 }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 100%); background: #0b0b0b; border-left: 1px solid var(--line); z-index: 11; display: flex; flex-direction: column; animation: slide .25s ease }
+  @keyframes slide { from { transform: translateX(30px); opacity: 0 } }
+  .drawer .top { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line) }
+  .drawer .top b { font: 700 16px var(--display) }
+  .x { border: 0; background: var(--card2); width: 32px; height: 32px; border-radius: 10px; cursor: pointer; display: grid; place-items: center }
+  .tabs { display: flex; gap: 6px; padding: 12px 22px 0 }
+  .tab { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; cursor: pointer; color: var(--muted) }
+  .tab[aria-selected="true"] { background: var(--text); color: var(--bg); border-color: var(--text) }
+  .drawer .body { flex: 1; overflow: auto; padding: 16px 22px 26px; font-size: 13.5px; color: #cfcfca }
+  .drawer .body p { margin: 0 0 12px }
+  .drawer .hint { color: var(--muted); font-size: 12.5px }
+  .log { list-style: none; margin: 0; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font: 12px/1.8 var(--mono); color: #b9b9b3 }
+  .log li { display: grid; grid-template-columns: 62px 1fr; gap: 8px }
+  .log time { color: var(--dim) } .log .ok { color: var(--lime) } .log .bad { color: var(--bad) }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 5px 14px; margin: 0 0 12px; font-size: 12.5px }
+  .repo { color: var(--lime); text-decoration: none; overflow-wrap: anywhere } .repo:hover { text-decoration: underline }
+  .rq { font: 11.5px/1.5 var(--mono); color: #cfcfca; word-break: break-all }
+  dt { color: var(--muted) } dd { margin: 0; overflow-wrap: anywhere }
+  .legend { display: flex; gap: 16px; color: var(--muted); font-size: 12px; margin-bottom: 8px }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px }
+  .proof { font: 11.5px/1.65 var(--mono); color: #e8e8e3; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; white-space: pre-wrap; word-break: break-all; margin: 0 }
+  .proof .mask { color: #3a3a37; letter-spacing: -1px }
+  .proof .gap { display: inline-block; color: var(--muted); background: rgba(255,255,255,.04); border-radius: 6px; padding: 0 7px; margin: 2px 0; font-size: 11px }
+  .share { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px }
+  .share .btn { flex: 1 1 150px }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 999px; z-index: 20 }
+  pre.req { white-space: pre-wrap; word-break: break-all; font: 11px/1.5 var(--mono); color: #a9a9a3; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0 }
+</style>
+</head>
+<body>
+<header><span><b>Network Partners</b></span><span class="tls"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Vérifié avec TLSNotary</span></header>
+
+<main>
+  <!-- 1. Intro -->
+  <section class="stage" id="intro">
+    <h1 id="title">Vérifie tes chiffres directement chez le casino</h1>
+    <p class="sub" id="lead">Ton navigateur va demander tes chiffres au casino lui-même, vérifier que c'est bien lui qui répond, puis
+      prouver que personne ne les a modifiés. Ensuite on les compare à ton dashboard.</p>
+    <div class="route" data-route></div>
+    <button class="go" id="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Lancer la vérification</button>
+    <p class="note" id="note">Environ 20 secondes et 60 Mo. Un ordinateur ou le wifi, c'est mieux.</p>
+  </section>
+
+  <!-- 2. Running -->
+  <section class="stage" id="run" hidden>
+    <div class="route" data-route></div>
+    <div class="now" id="now"><div class="spin"></div><div><b id="nowTitle">Démarrage…</b><p id="nowText"></p></div></div>
+    <ul class="done" id="done"></ul>
+    <div class="meter"><span id="step">Étape 1 sur 5</span><span id="clock">0 s</span></div>
+    <div class="bar"><i id="bar"></i></div>
+  </section>
+
+  <!-- 3. Result -->
+  <section class="stage" id="result" hidden>
+    <div class="panel">
+      <div class="verdict" id="verdict"></div>
+      <div class="figs" id="figures"></div>
+      <h2>Ton dashboard comparé à <span class="cname">ce casino</span></h2>
+      <p class="cmpsum" id="cmpsum"></p>
+      <div class="tablewrap"><table id="cmptable"></table></div>
+      <p class="why" id="cmpwhy" hidden></p>
+    </div>
+    <div class="panel trust">
+      <h2>Pourquoi tu peux y croire</h2>
+      <div class="route" data-route></div>
+      <ul class="checks">
+        <li><i><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></i><div><b>Ça vient bien de <span class="cname">ce casino</span></b><span id="why1">Ton navigateur a vérifié le certificat de sécurité du site, comme le cadenas de ta barre d'adresse.</span></div></li>
+        <li><i><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></i><div><b>C'est ton navigateur qui a vérifié</b><span>Avec TLSNotary, un outil open source de la Fondation Ethereum. Pas notre serveur.</span></div></li>
+        <li><i><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></i><div><b>Rien n'a été modifié</b><span>Une preuve cryptographique : un seul chiffre changé, par nous ou par n'importe qui, et elle échoue.</span></div></li>
+      </ul>
+      <div class="actions">
+        <button class="btn p" data-open="proof">Voir la preuve</button>
+        <button class="btn" data-open="how">Comment ça marche ?</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="La preuve">
+  <div class="top"><b>La preuve</b><button class="x" id="close" aria-label="Fermer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="proof">Ce que le casino a envoyé</button>
+    <button class="tab" role="tab" data-tab="log">Ce que ton navigateur a fait</button>
+    <button class="tab" role="tab" data-tab="how">Comment ça marche</button>
+  </div>
+  <div class="body">
+    <div data-pane="proof">
+      <p class="hint">La réponse du casino, telle que ton navigateur l'a reçue et vérifiée. Le texte en clair, ce sont tes lignes. Les
+        blocs gris sont ce que la preuve garde illisible : les autres créateurs et notre commission.</p>
+      <div class="share">
+        <button class="btn" id="copyProof">Copier la preuve</button>
+        <button class="btn" data-ask="chatgpt">Demander à ChatGPT</button>
+        <button class="btn" data-ask="claude">Demander à Claude</button>
+      </div>
+      <p class="hint" id="shareNote">Ouvre une conversation avec la preuve et une question toute prête : une IA indépendante t'explique ce
+        que ça garantit, et ses limites.</p>
+      <dl id="facts"></dl>
+      <div class="legend"><span><i style="background:#e8e8e3"></i>prouvé, en clair</span><span><i style="background:#3a3a37"></i>masqué par la preuve</span></div>
+      <pre class="proof" id="proof"></pre>
+    </div>
+    <div data-pane="log">
+      <p class="hint">Chaque ligne est un événement réel du vérificateur, horodaté par ton navigateur.</p>
+      <ol class="log" id="log"></ol>
+      <p class="hint" style="margin-top:16px">Requête envoyée au casino (notre jeton de connexion est masqué) :</p>
+      <pre class="req" id="rawreq"></pre>
+    </div>
+    <div data-pane="how">
+      <p><b>TLSNotary</b> est une technologie open source développée par l'équipe de recherche de la Fondation Ethereum. Elle
+        n'est pas à nous : n'importe qui peut lire son code.</p>
+      <p>Quand tu ouvres un site en https, la connexion est chiffrée et signée par le certificat du site. TLSNotary permet à ton
+        navigateur de participer à cette connexion avec le casino et d'en garder une preuve : ce que le casino a répondu, et
+        rien d'autre.</p>
+      <p>Notre serveur fait le calcul avec ton navigateur (c'est le « calcul partagé », ou MPC). Il peut récupérer la réponse,
+        mais pas la modifier : ton navigateur le verrait et la vérification échouerait.</p>
+      <p>Seules tes lignes sont révélées. Celles des autres créateurs et notre commission restent masquées par la preuve elle-même.</p>
+      <p><b>Envie d'en être sûr ?</b> Inscris-toi avec ton propre lien, fais un dépôt, puis relance une vérification : tu
+        retrouveras ton compte dans la liste.</p>
+      <p><b>Le code de cette page est public</b> : <a class="repo" href="https://github.com/NetworkPartners/verification-tlsnotary"
+        target="_blank" rel="noopener">github.com/NetworkPartners/verification-tlsnotary</a>. On y trouve tout ce que fait ton
+        navigateur, et de quoi vérifier que c'est exactement ce code qui tourne ici : n'importe qui peut recompiler le
+        vérificateur depuis la source officielle de TLSNotary et comparer les empreintes.</p>
+    </div>
+  </div>
+</aside>
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

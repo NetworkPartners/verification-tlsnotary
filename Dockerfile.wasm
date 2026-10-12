@@ -1,0 +1,28 @@
+# Builds the TLSNotary browser module (crates/wasm, verifier + prover bindings) in isolation.
+# Debian trixie: clang >= 16 is required to compile C deps to wasm (bookworm only has 14).
+# Everything is pinned so that anyone rebuilding gets the SAME bytes as the served module
+# (compare with EMPREINTES.txt): base image by digest, compiler by date.
+FROM rust@sha256:6ff07edce8775d0f64be7aba9197229407301bddf2054d62c27b541a6238a181
+RUN apt-get update && apt-get install -y --no-install-recommends clang lld && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch v0.1.0-alpha.15 https://github.com/tlsnotary/tlsn /tlsn
+WORKDIR /tlsn
+# Same guard as the native image: refuse the crates compromised on crates.io on 2026-08-20.
+RUN ! grep -qE '^name = "(proc-macro1|internment|append-only-vec)"$' Cargo.lock \
+ && ! grep -A1 '^name = "arrayref"$' Cargo.lock | grep -q '0.3.10'
+# The wasm crate pins a nightly toolchain (crates/wasm/rust-toolchain): installed on first cargo call.
+WORKDIR /tlsn/crates/wasm
+# TLSNotary asks for an UNDATED nightly: each day would compile different bytes. Pin the one used for
+# the served module, and fail loudly if the file ever changes shape.
+RUN sed -i 's/^channel = "nightly"$/channel = "nightly-2026-10-11"/' rust-toolchain \
+ && grep -q 'nightly-2026-10-11' rust-toolchain
+RUN rustup toolchain install && rustup show active-toolchain
+# The compiler's install path (it contains the toolchain date AND the machine's architecture) is
+# written into the module by panic messages: remap it to a neutral name, or a build on another
+# machine would never give the same bytes.
+RUN SYSROOT="$(rustc --print sysroot)" \
+ && sed -i "s|^rustflags = \[|rustflags = [\n    \"--remap-path-prefix=$SYSROOT=/rust-sysroot\",|" .cargo/config.toml \
+ && grep -q 'remap-path-prefix' .cargo/config.toml
+RUN cargo install wasm-pack --locked --version =0.14.0 --root /usr/local
+RUN apt-get update && apt-get install -y --no-install-recommends jq && rm -rf /var/lib/apt/lists/*
+RUN bash build.sh
+RUN ls -la pkg && du -sh pkg/*.wasm
