@@ -30,6 +30,8 @@
 
   header { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; color: var(--muted); font-size: 13px }
   header b { color: var(--text); font-family: var(--display) }
+  header .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 14px }
+  header .brand img { display: block; width: 26px; height: 26px; object-fit: contain }
   header .tls { display: inline-flex; align-items: center; gap: 6px }
   main { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px 20px 24px }
   .stage { width: 100%; animation: in .35s ease }
@@ -173,7 +175,7 @@
 </style>
 </head>
 <body>
-<header><span><b>Network Partners</b></span><span class="tls"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Vérifié avec TLSNotary</span></header>
+<header><span class="brand"><img src="./logo.png" alt="" width="26" height="26"><b>Network Partners</b></span><span class="tls"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Vérifié avec TLSNotary</span></header>
 
 <main>
   <!-- 1. Intro -->
@@ -183,7 +185,7 @@
       prouver que personne ne les a modifiés. Ensuite on les compare à ton dashboard.</p>
     <div class="route" data-route></div>
     <button class="go" id="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Lancer la vérification</button>
-    <p class="note" id="note">Environ 20 secondes et 60 Mo. Un ordinateur ou le wifi, c'est mieux.</p>
+    <p class="note" id="note" hidden></p>
   </section>
 
   <!-- 2. Running -->

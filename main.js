@@ -156,8 +156,6 @@ function drawRoutes() {
       `<div class="node" data-n="casino"><div class="ic">${I.dice}</div><b>${esc(NAMES[CASINO] || 'Le casino')}</b><span>envoie tes chiffres</span></div>` +
       `<div class="wire" data-n="wire"><span class="pill">${I.lock}<span>connexion chiffrée</span></span><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>` +
       `<div class="node" data-n="you"><div class="ic">${I.monitor}</div><b>Ton navigateur</b><span>les vérifie</span></div>`
-    el.insertAdjacentHTML('afterend',
-      `<div class="np" data-n="np"><div class="ic">${I.server}</div><div><b>Network Partners</b><span>aide au calcul, sans pouvoir modifier tes chiffres</span></div></div>`)
   })
 }
 function light(parts, cls = 'on') {
@@ -234,6 +232,7 @@ light([])
 if ((!T || !S || !HOST || !FILTER || !FROM || !TO) && !DEMO) {
   $('go').disabled = true
   $('note').textContent = 'Ce lien est incomplet. Relance la vérification depuis ton dashboard.'
+  $('note').hidden = false
 }
 
 // ── Result ──────────────────────────────────────────────────────────────────────────────
