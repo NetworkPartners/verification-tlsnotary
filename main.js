@@ -378,6 +378,13 @@ const askPrompt = (proof) =>
   `Le code de la page de vérification est public : https://github.com/NetworkPartners/verification-tlsnotary (avec la ` +
   `recette pour recompiler le vérificateur depuis la source officielle de TLSNotary et les empreintes SHA-256 des fichiers ` +
   `servis par https://verif.networkpartners.xyz).\n\n` +
+  `Limite connue, assumée par l'agence : la preuve garantit que les lignes affichées sont authentiques, pas que la liste ` +
+  `est complète. Le site d'affiliation du casino renvoie tous les joueurs du compte de l'agence (tous ses créateurs) en une ` +
+  `seule réponse, sans filtre par créateur côté casino (testé) ; c'est donc le serveur de l'agence qui choisit quelles ` +
+  `lignes révéler. Prouver qu'aucune ligne masquée ne m'appartient obligerait à révéler les autres créateurs, et TLSNotary ` +
+  `ne sait pas encore prouver « cette ligne n'est pas à toi » sans la montrer. La parade proposée : m'inscrire avec mon ` +
+  `propre lien, déposer, et vérifier que j'apparais.\n\n` +
+  `${CASINO === 'celsius' ? 'Le chiffre FTD affiché = nombre de joueurs inscrits sur la période qui ont au moins un dépôt (dep_count > 0).' : 'Le chiffre « déposants » affiché = nombre de joueurs avec au moins un dépôt sur la période.'}\n\n` +
   `Je ne te demande pas de valider mon contrat ni le calcul de ma commission, seulement ce que cette preuve établit.\n\n` +
   `Peux-tu m'expliquer simplement :\n1. ce que cette vérification garantit vraiment, et ses limites ;\n` +
   `2. si les données ci-dessous te semblent cohérentes ;\n3. ce que je peux vérifier moi-même pour en être sûr.\n\n` +

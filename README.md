@@ -48,10 +48,22 @@ Soyons honnêtes sur les limites :
 - le calcul de ta commission : la preuve porte sur tes joueurs, leurs dépôts et leur NGR, pas sur ton
   contrat ;
 - que la liste est **complète** : c'est notre serveur qui choisit quelles lignes de la réponse révéler.
+  Le site d'affiliation du casino renvoie tous les joueurs de tous nos créateurs en une seule réponse, et
+  ne sait pas filtrer par créateur de son côté (testé sur CellXpert, la plateforme de Rolletto et MyStake,
+  avec onze noms de paramètre). Prouver qu'aucune ligne masquée n'est à toi obligerait à révéler les autres
+  créateurs, et TLSNotary ne sait pas encore prouver « cette ligne n'est pas à toi » sans la montrer.
   La preuve garantit que tout ce qui est montré est authentique, pas que rien n'a été omis. Pour le
   vérifier toi-même : inscris-toi avec ton propre lien, fais un dépôt, puis relance une vérification ; ton
   compte doit apparaître dans la liste ;
 - TLSNotary est en version alpha et n'a pas encore été audité par un tiers.
+
+## Comment sont comptés les chiffres affichés
+
+- **Celsius** : la réponse contient les joueurs **inscrits** pendant la période ; leurs dépôts, GGR et NGR
+  sont des totaux depuis l'inscription. **FTD** = joueurs de cette liste avec au moins un dépôt
+  (`dep_count > 0`).
+- **Rolletto, MyStake** : chaque ligne est l'activité d'un joueur **sur la période** ; **déposants** =
+  joueurs avec au moins un dépôt sur cette période.
 
 ## Vérifier ce qui tourne
 
