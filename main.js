@@ -279,12 +279,12 @@ function ProofPath({ status = 'idle', stage = 0, size = 'lg' }) {
     h('div', { class: 'np-path__dot' }, Icon(s === 'error' ? 'x' : icon, isz),
       s === 'on' && (status === 'done' || running) && h('span', { class: 'np-path__badge' }, Icon('check', size === 'lg' ? 12 : 10, 2.5))),
     h('div', { class: 'np-path__label' }, label), h('div', { class: 'np-path__sub' }, sub))
-  return h('div', { class: cx('np-path', 'np-path--' + size, 'np-path--' + status), role: 'img', 'aria-label': `Trajet : ${NAME} (${HOST}), connexion chiffrée, ton navigateur.` },
-    node(st(3), 'server', NAMES[CASINO] || 'Le casino', HOST),
-    h('div', { class: cx('np-path__link', 'is-' + link(3)) }, h('span', { class: 'np-path__flow' })),
-    node(st(2), 'lock', 'Connexion chiffrée', status === 'refused' ? 'preuve refusée' : 'TLS'),
+  return h('div', { class: cx('np-path', 'np-path--' + size, 'np-path--' + status), role: 'img', 'aria-label': `Trajet : ton navigateur, connexion chiffrée, ${NAME} (${HOST}).` },
+    node(st(1), 'browser', 'Ton navigateur', status === 'done' ? 'a tout vérifié' : 'vérifie la preuve'),
     h('div', { class: cx('np-path__link', 'is-' + link(2)) }, h('span', { class: 'np-path__flow' })),
-    node(st(1), 'browser', 'Ton navigateur', status === 'done' ? 'a tout vérifié' : 'vérifie la preuve'))
+    node(st(2), 'lock', 'Connexion chiffrée', status === 'refused' ? 'preuve refusée' : 'TLS'),
+    h('div', { class: cx('np-path__link', 'is-' + link(3)) }, h('span', { class: 'np-path__flow' })),
+    node(st(3), 'server', NAMES[CASINO] || 'Le casino', HOST))
 }
 function StepList(steps, current, failedAt, meter) {
   return h('ol', { class: 'np-steps' }, steps.map((s, i) => {
@@ -423,7 +423,8 @@ function onTraffic(m) { traffic = m; updateProgress() }
 
 // ── Screens ───────────────────────────────────────────────────────────────────────────────
 const main = $('main')
-function view(node) { main.replaceChildren(node) }
+// dock: phone-only bar fixed at the bottom; kept outside the animated view, whose transform would trap it
+function view(node, dock) { main.replaceChildren(node); $('dock').replaceChildren(...(dock ? [dock] : [])) }
 const DASHBOARD = 'https://dashboard.networkpartners.xyz'
 const REPO = 'https://github.com/NetworkPartners/verification-tlsnotary'
 
@@ -471,7 +472,7 @@ function ComparisonTable(ps, expected) {
       h('table', { class: 'np-compare__table' },
         h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Joueur'), h('th', { scope: 'col', class: 'np-compare__num' }, 'Déposé'),
           withNgr && h('th', { scope: 'col', class: 'np-compare__num' }, 'NGR'), h('th', { scope: 'col', class: 'np-compare__st' }, 'Statut'))),
-        h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player' }, r.who), cell(r.deposits, r.dash?.deposits),
+        h('tbody', null, sorted.map((r) => h('tr', null, h('th', { scope: 'row', class: 'np-compare__player' }, h('span', { class: 'np-compare__mark' }, StatusPill(status(r))), r.who), cell(r.deposits, r.dash?.deposits),
           withNgr && (r.ngr == null ? h('td', { class: 'np-compare__num' }) : cell(r.ngr, r.dash?.ngr)), h('td', { class: 'np-compare__st' }, StatusPill(status(r)))))))),
     gaps > 0 && h('div', { class: 'np-note' }, Icon('info', 18),
       h('div', null, h('b', null, 'D\u2019où peut venir un écart ?'),
@@ -512,7 +513,8 @@ function renderResult(v, ps, expected) {
         Guarantee('lock', 'Rien n’a été modifié', 'Un seul chiffre changé, et la vérification échoue.')),
       h('div', { class: 'vs-actions' },
         Button({ icon: 'eye', label: 'Voir la preuve', onclick: () => openSheet('sent') }),
-        Button({ variant: 'secondary', icon: 'help', label: 'Comment ça marche ?', onclick: () => openSheet('how') })))))
+        Button({ variant: 'secondary', icon: 'help', label: 'Comment ça marche ?', onclick: () => openSheet('how') })))),
+    Button({ icon: 'eye', label: 'Voir la preuve', onclick: () => openSheet('sent') }))
 }
 
 // ── After the worker: check the proof, then show the result (or why it is refused) ───────────
@@ -585,7 +587,7 @@ function prepareShare(v, ps) {
 }
 
 // ── The proof sheet ───────────────────────────────────────────────────────────────────────
-const TABS = [['sent', 'Ce que le casino a envoyé'], ['did', 'Ce que ton navigateur a fait'], ['how', 'Comment ça marche']]
+const TABS = [['sent', 'Ce que le casino a envoyé', 'La réponse'], ['did', 'Ce que ton navigateur a fait', 'Le journal'], ['how', 'Comment ça marche', 'Comment ça marche']]
 function sheetBody(tab) {
   const v = last
   if (tab === 'sent') {
@@ -626,8 +628,9 @@ let sheetTab = null
 function openSheet(tab) {
   sheetTab = tab
   $('sheet').hidden = false
-  $('sheetTabs').replaceChildren(...TABS.map(([id, label]) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === tab), tabindex: id === tab ? 0 : -1,
-    class: cx('np-tabs__tab', id === tab && 'is-active'), onclick: () => openSheet(id) }, label)))
+  $('sheetTabs').replaceChildren(...TABS.map(([id, label, short]) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === tab), tabindex: id === tab ? 0 : -1,
+    class: cx('np-tabs__tab', id === tab && 'is-active'), onclick: () => openSheet(id) },
+    h('span', { class: 'vs-long' }, label), h('span', { class: 'vs-short' }, short))))
   $('sheetBody').replaceChildren(sheetBody(tab))
   $('sheetPanel').focus()
 }

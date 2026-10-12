@@ -91,8 +91,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-path__link.is-active { background: repeating-linear-gradient(90deg, var(--lime) 0 8px, transparent 8px 14px); background-size: 28px 2px; animation: np-charge .6s linear infinite; }
 .np-path__link.is-error { background: repeating-linear-gradient(90deg, var(--red) 0 4px, transparent 4px 9px); }
 .np-path__flow { display: none; }
-.np-path--done .np-path__link.is-on .np-path__flow { display: block; position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--ink); box-shadow: 0 0 10px var(--lime); animation: np-flow 2.4s cubic-bezier(.45,0,.55,1) infinite; }
-.np-path--done .np-path__link.is-on + .np-path__node + .np-path__link .np-path__flow { animation-delay: 1.2s; }
+.np-path--done .np-path__link.is-on .np-path__flow { display: block; position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--ink); box-shadow: 0 0 10px var(--lime); animation: np-flow 2.4s cubic-bezier(.45,0,.55,1) 1.2s infinite; }
+.np-path--done .np-path__link.is-on + .np-path__node + .np-path__link .np-path__flow { animation-delay: 0s; }
 .np-path--idle .np-path__node:nth-child(3) .np-path__dot { color: var(--ink-muted); }
 
 /* StepList */
@@ -166,6 +166,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-compare__table tbody tr:hover { background: var(--fill); }
 .np-compare__table td, .np-compare__table tbody th { padding: 10px var(--space-4); vertical-align: top; }
 .np-compare__player { text-align: left; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.np-compare__mark { display: none; }
+.vs-dock { display: none; }
+.vs-short { display: none; }
 .np-compare__table .np-compare__num { text-align: right; color: var(--ink); white-space: nowrap; width: 1%; padding-left: var(--space-8); }
 .np-compare__num > span { display: block; }
 .np-compare__dash { margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--amber); }
@@ -257,7 +260,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 @keyframes np-spin { to { transform: rotate(360deg); } }
 @keyframes np-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.45); } }
 @keyframes np-charge { to { background-position: 28px 0; } }
-@keyframes np-flow { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 6px); opacity: 0; } }
+@keyframes np-flow { 0% { left: calc(100% - 6px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 0; opacity: 0; } }
 @keyframes np-pop { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes np-in { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes np-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -334,6 +337,24 @@ body { overflow: hidden; }
   .np-path__node { width: 96px; }
   .np-path { --np-node: 52px; }
   .np-path--sm { --np-node: 40px; }
+  body:has(.vs-dock:not(:empty)) .vs-main { padding-bottom: calc(var(--space-12) + 64px + env(safe-area-inset-bottom)); }
+  .vs-result > .np-card { padding: var(--space-4); }
+  .vs-result .np-figures { gap: var(--space-2); }
+  .vs-result .np-figure { padding: var(--space-3) var(--space-4); }
+  .np-compare__table .np-compare__st { display: none; }
+  .np-compare__mark { display: inline-flex; vertical-align: -6px; margin-right: var(--space-2); }
+  .np-compare__table .np-compare__num { padding-left: var(--space-2); }
+  .np-compare__table td:last-of-type, .np-compare__table thead th:last-of-type { padding-right: var(--space-3); }
+  .vs-aside .vs-actions .np-btn:first-child { display: none; }
+  .vs-dock:not(:empty) { display: block; position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom)); background: linear-gradient(180deg, transparent 0%, var(--bg) 40%); }
+  .vs-dock .np-btn { width: 100%; }
+  .vs-long { display: none; }
+  .vs-short { display: inline; }
+  .vs-tools { flex-direction: column; }
+  .vs-tools .np-btn { width: 100%; }
+  .np-path__node, .np-path--sm .np-path__node { width: auto; flex: 0 1 auto; min-width: 72px; max-width: 100px; }
+  .np-path__sub, .np-path--sm .np-path__sub { white-space: nowrap; font-size: 10.5px; }
+  .np-path__link { min-width: 28px; }
   .np-sheet { align-items: flex-end; }
   .np-sheet__panel { margin: 0; width: 100%; max-height: 92vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; animation-name: np-rise; }
   .np-sheet__head, .np-sheet__body { padding-left: var(--space-5); padding-right: var(--space-5); }
@@ -374,6 +395,7 @@ body { overflow: hidden; }
     <div class="np-sheet__body"><div class="np-tabs" role="tablist" id="sheetTabs"></div><div id="sheetBody"></div></div>
   </section>
 </div>
+<div class="vs-dock" id="dock"></div>
 <div class="np-toast" id="toast" hidden></div>
 <script type="module" src="./main.js"></script>
 </body>
