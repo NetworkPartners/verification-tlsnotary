@@ -332,7 +332,10 @@ async function showResult(v) {
   askData = {
     head: proofText.split('\n').slice(0, 7).join('\n'),
     prefix: CASINO === 'celsius' ? FILTER.replace('"campaign_name":"', '') : '',
-    maskedLine: `Reste de la réponse masqué par la preuve (autres créateurs, commission de l'agence) : ${masked.length} blocs, ${fmtBytes(masked.reduce((n, m) => n + m.length, 0))}.`,
+    maskedLine: `Parties masquées par la preuve : ${masked.length} blocs, ${fmtBytes(masked.reduce((n, m) => n + m.length, 0))} au total. ` +
+      `Selon l'agence, ce sont les lignes des joueurs de ses autres créateurs, l'enveloppe de la réponse et, dans mes lignes, ` +
+      `${CASINO === 'celsius' ? "le champ income (sa commission) et la fin du nom de campagne (son accord avec le casino)" : 'le champ Commissions (sa commission)'}. ` +
+      `La preuve ne permet pas de vérifier ce que contient un bloc masqué.`,
     rows: [...v.body.matchAll(/\{[^{}\u0000]*\}/g)].map((m) => {
       try { const o = JSON.parse(m[0]); delete o.campaign_name; return o } catch { return null }
     }).filter(Boolean).sort((a, b) => num(b.dep_sum ?? b.Net_Deposits ?? b.Deposits) - num(a.dep_sum ?? a.Net_Deposits ?? a.Deposits)),
