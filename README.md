@@ -17,8 +17,8 @@ l'équipe de recherche de la Fondation Ethereum (version `v0.1.0-alpha.15`, mode
    inventer la réponse du casino, ni la modifier, sans que ton navigateur le voie.
 3. Ton navigateur vérifie le **certificat** du site (comme le cadenas de ta barre d'adresse), puis la
    **preuve** que les données révélées sont exactement celles envoyées par le casino.
-4. Seules tes lignes sont révélées. Les autres créateurs et notre commission restent masqués par la
-   preuve elle-même.
+4. Seules tes lignes sont révélées. Les autres créateurs, notre commission et ce qui porte notre
+   accord avec le casino (nom de l'offre, fin du nom de campagne) restent masqués par la preuve elle-même.
 
 Il n'y a pas de « fichier de preuve » à faire vérifier ailleurs : dans ce mode, **le vérificateur, c'est
 ton navigateur**. La question qui compte est donc : *le code qui tourne dans mon navigateur est-il bien

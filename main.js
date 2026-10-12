@@ -16,7 +16,7 @@ const HOST = HOSTS[CASINO] || ''
 const NAME = NAMES[CASINO] || 'le casino'
 const PROVER = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?t=${encodeURIComponent(T)}&s=${encodeURIComponent(S)}`
 // Our commission: NEVER displayed, not even as a masked placeholder.
-const NEVER_SHOW = ['income', 'Commissions']
+const NEVER_SHOW = ['income', 'offer_name', 'Commissions']
 // Local design review only (never on the real host): ?demo renders sample data, clearly labelled.
 const DEMO = qs.has('demo') && ['localhost', '127.0.0.1'].includes(location.hostname)
 
@@ -559,7 +559,7 @@ function prepareShare(v, ps) {
     prefix: CASINO === 'celsius' ? FILTER.replace('"campaign_name":"', '') : '',
     maskedLine: `Parties masquées par la preuve : ${masked.length} blocs, ${fmtBytes(masked.reduce((n, m) => n + m.length, 0))} au total. ` +
       `Selon l'agence, ce sont les lignes des joueurs de ses autres créateurs, l'enveloppe de la réponse et, dans mes lignes, ` +
-      `${CASINO === 'celsius' ? "le champ income (sa commission) et la fin du nom de campagne (son accord avec le casino)" : 'le champ Commissions (sa commission)'}. ` +
+      `${CASINO === 'celsius' ? "le champ income (sa commission), le nom de l'offre et la fin du nom de campagne (qui portent son accord avec le casino)" : 'le champ Commissions (sa commission)'}. ` +
       `La preuve ne permet pas de vérifier ce que contient un bloc masqué.`,
     rows: [...v.body.matchAll(/\{[^{}\u0000]*\}/g)].map((m) => {
       try { const o = JSON.parse(m[0]); delete o.campaign_name; return o } catch { return null }
@@ -586,7 +586,7 @@ function sheetBody(tab) {
       ]),
       h('div', { class: 'vs-h3' }, `Réponse brute de ${NAME}`),
       RawProof(v.body),
-      h('p', { class: 'vs-hint' }, 'Les lignes avec un point vert sont les tiennes, prouvées. Les blocs grisés sont masqués : les joueurs de nos autres créateurs (le casino renvoie tout notre compte d’un coup) et, dans tes lignes, notre commission et la fin du nom de campagne, qui contient notre accord avec le casino. La preuve ne laisse voir le contenu d’aucun bloc masqué.'),
+      h('p', { class: 'vs-hint' }, 'Les lignes avec un point vert sont les tiennes, prouvées. Les blocs grisés sont masqués : les joueurs de nos autres créateurs (le casino renvoie tout notre compte d’un coup) et, dans tes lignes, notre commission, le nom de l\u2019offre et la fin du nom de campagne, qui portent notre accord avec le casino. La preuve ne laisse voir le contenu d’aucun bloc masqué.'),
       h('div', { class: 'vs-tools' },
         Button({ variant: 'secondary', icon: 'copy', label: 'Copier la preuve', onclick: async () => toast(await copy(proofText) ? 'Preuve copiée' : 'Copie impossible dans ce navigateur') }),
         Button({ variant: 'ghost', iconAfter: 'external', label: 'Demander à ChatGPT', onclick: () => ask('chatgpt') }),
