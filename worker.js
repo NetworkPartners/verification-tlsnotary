@@ -8,13 +8,13 @@ const post = (type, data) => self.postMessage({ type, ...data })
 // so the creator SEES their browser doing the work (nothing simulated).
 const traffic = { sent: 0, recv: 0 }
 
-function wsIo(url) {
+function wsIo(url, onClosed) {
   const ws = new WebSocket(url, ['binary'])
   ws.binaryType = 'arraybuffer'
   const queue = []; let waiter = null; let closed = false
   const opened = new Promise((ok, ko) => { ws.onopen = ok; ws.onerror = () => ko(new Error('connexion au prouveur impossible')) })
   ws.onmessage = (e) => { const b = new Uint8Array(e.data); traffic.recv += b.byteLength; if (waiter) { const w = waiter; waiter = null; w(b) } else queue.push(b) }
-  ws.onclose = () => { closed = true; if (waiter) { const w = waiter; waiter = null; w(null) } }
+  ws.onclose = () => { closed = true; onClosed?.(); if (waiter) { const w = waiter; waiter = null; w(null) } }
   return {
     opened,
     async read() { if (queue.length) return queue.shift(); if (closed) return null; return new Promise((r) => { waiter = r }) },
@@ -27,10 +27,15 @@ self.onmessage = async ({ data: { prover, threads } }) => {
   let label = ''
   const step = (l) => { label = l; post('step', { label }) }
   const ticker = setInterval(() => post('traffic', { ...traffic }), 400)
+  // The prover closes the connection once its proof is sent, and the verifier finishes right
+  // after. If the prover dies instead, the wasm verifier waits forever on the closed socket:
+  // give up 15 s after the close, so the page shows a failure instead of spinning.
+  let dead = null
+  const onClosed = () => { dead = setTimeout(() => { post('error', { label, message: 'le serveur de preuve a coupé la connexion' }); self.close() }, 15000) }
   try {
     step('Chargement du vérificateur TLSNotary'); await init(); await initialize(undefined, threads); post('done', { label })
     const v = new Verifier({ max_sent_data: 4096, max_recv_data: 32768, max_sent_records: undefined, max_recv_records_online: undefined, root_certs: undefined })
-    step('Connexion au prouveur'); const io = wsIo(prover); await io.opened; await v.connect(io); post('done', { label })
+    step('Connexion au prouveur'); const io = wsIo(prover, onClosed); await io.opened; await v.connect(io); post('done', { label })
     step('Préparation du calcul partagé'); const proxyHost = await v.setup()
     if (proxyHost) throw new Error('mode proxy refusé : seul le mode MPC est accepté')
     post('done', { label })
@@ -41,5 +46,5 @@ self.onmessage = async ({ data: { prover, threads } }) => {
     post('result', { out: JSON.parse(JSON.stringify(out, (_, x) => (typeof x === 'bigint' ? Number(x) : x))) })
   } catch (e) {
     post('error', { label, message: e?.message ?? String(e) })
-  } finally { clearInterval(ticker) }
+  } finally { clearInterval(ticker); clearTimeout(dead) }
 }

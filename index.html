@@ -91,7 +91,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-path__link.is-active { background: repeating-linear-gradient(90deg, var(--lime) 0 8px, transparent 8px 14px); background-size: 28px 2px; animation: np-charge .6s linear infinite; }
 .np-path__link.is-error { background: repeating-linear-gradient(90deg, var(--red) 0 4px, transparent 4px 9px); }
 .np-path__flow { display: none; }
-.np-path--done .np-path__link.is-on .np-path__flow { display: block; position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--ink); box-shadow: 0 0 10px var(--lime); animation: np-flow 2.4s cubic-bezier(.45,0,.55,1) 1.2s infinite; }
+/* Done: the line itself disappears, only a white dot keeps running along it. */
+.np-path--done .np-path__link.is-on { background: transparent; }
+.np-path--done .np-path__link.is-on .np-path__flow { display: block; position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: var(--radius-full); background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.6); animation: np-flow 2.4s cubic-bezier(.45,0,.55,1) 1.2s infinite; }
 .np-path--done .np-path__link.is-on + .np-path__node + .np-path__link .np-path__flow { animation-delay: 0s; }
 .np-path--idle .np-path__node:nth-child(3) .np-path__dot { color: var(--ink-muted); }
 
@@ -389,6 +391,7 @@ body { overflow: hidden; }
   .np-path__flow, .np-path__node.is-active .np-path__dot::after { display: none !important; }
   .np-steps__spin { border-color: var(--lime); border-top-color: var(--lime); }
   .np-path__link.is-active { background: var(--lime); opacity: .55; }
+  .np-path--done .np-path__link.is-on { background: var(--lime); }  /* no moving dot: keep the line */
 }
 </style>
 </head>
