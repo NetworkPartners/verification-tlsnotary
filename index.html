@@ -91,10 +91,11 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .np-path__link.is-active { background: repeating-linear-gradient(90deg, var(--lime) 0 8px, transparent 8px 14px); background-size: 28px 2px; animation: np-charge .6s linear infinite; }
 .np-path__link.is-error { background: repeating-linear-gradient(90deg, var(--red) 0 4px, transparent 4px 9px); }
 .np-path__flow { display: none; }
-/* Done: the line itself disappears, only a white dot keeps running along it. */
+/* Done: the lines disappear and ONE white dot runs casino → browser: across the right link, behind
+   the middle node, then across the left link (two half-cycles of the same 3 s loop). */
 .np-path--done .np-path__link.is-on { background: transparent; }
-.np-path--done .np-path__link.is-on .np-path__flow { display: block; position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: var(--radius-full); background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.6); animation: np-flow 2.4s cubic-bezier(.45,0,.55,1) 1.2s infinite; }
-.np-path--done .np-path__link.is-on + .np-path__node + .np-path__link .np-path__flow { animation-delay: 0s; }
+.np-path--done .np-path__link.is-on .np-path__flow { display: block; position: absolute; top: -2px; left: 0; width: 6px; height: 6px; border-radius: var(--radius-full); background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.6); opacity: 0; animation: np-run-left 3s linear 1s infinite; }
+.np-path--done .np-path__link.is-on + .np-path__node + .np-path__link .np-path__flow { animation-name: np-run-right; }
 .np-path--idle .np-path__node:nth-child(3) .np-path__dot { color: var(--ink-muted); }
 
 /* StepList */
@@ -276,7 +277,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 @keyframes np-spin { to { transform: rotate(360deg); } }
 @keyframes np-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.45); } }
 @keyframes np-charge { to { background-position: 28px 0; } }
-@keyframes np-flow { 0% { left: calc(100% - 6px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 0; opacity: 0; } }
+@keyframes np-run-right { 0% { left: calc(100% - 6px); opacity: 0; } 4% { opacity: 1; } 44% { left: 0; opacity: 1; } 46%, 100% { left: 0; opacity: 0; } }
+@keyframes np-run-left { 0%, 54% { left: calc(100% - 6px); opacity: 0; } 56% { opacity: 1; } 96% { left: 0; opacity: 1; } 100% { left: 0; opacity: 0; } }
 @keyframes np-pop { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes np-in { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes np-fade { from { opacity: 0; } to { opacity: 1; } }

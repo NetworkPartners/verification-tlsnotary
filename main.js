@@ -75,6 +75,14 @@ function check(out) {
   const recvRaw = revealed(t.recv, t.recv_authed)
   const body = recvRaw.slice(recvRaw.indexOf('\r\n\r\n') + 4)
   const problems = []
+  // 0. The casino really answered the list. An expired panel session gets an error code, or the
+  // login page (HTML) with a 200: both carry no row, and would read as "no player" (2026-10-14).
+  {
+    const head = recvRaw.slice(0, Math.max(0, recvRaw.indexOf('\r\n\r\n')))
+    const status = (head.split('\r\n')[0] || '').replace(/\u0000/g, '')
+    if (!/^HTTP\/1\.[01] 2\d\d/.test(status)) problems.push(`le casino a refusé la demande (${status || 'sans réponse'}) : la session de Network Partners chez ${NAME} a sans doute expiré`)
+    else if (/^content-type:\s*text\/html/im.test(head)) problems.push(`le casino a renvoyé sa page de connexion au lieu de la liste : la session de Network Partners chez ${NAME} a sans doute expiré`)
+  }
   // 1. The server, from its TLS certificate.
   if (out.server_name !== HOST) problems.push(`la réponse vient de ${out.server_name ?? 'un serveur inconnu'}, pas de ${HOST}`)
   // 2. The period actually asked to the casino (revealed request line).
